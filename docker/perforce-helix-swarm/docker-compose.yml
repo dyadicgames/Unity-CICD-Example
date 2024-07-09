@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+  perforce-helix-swarm:
+    image: perforce/helix-swarm:latest
+    hostname: helix-swarm
+    ports:
+      - "8085:8085"
+    volumes:
+      - perforce-helix-swarm-data:/opt/perforce/swarm/data
+      - ./swarm-docker-setup-custom.sh:/opt/perforce/swarm/sbin/swarm-docker-setup-custom.sh:ro
+    env_file: "../.env"
+    environment:
+      P4D_PORT: "perforce:1666"
+      SWARM_HOST: "helix-swarm"
+      SWARM_REDIS: "helix-swarm-redis"
+      SWARM_REDIS_PORT: 7379
+    command: /bin/sh -c "/opt/perforce/swarm/sbin/swarm-docker-setup-custom.sh"
+    depends_on:
+      - perforce-helix-swarm-redis
+
+  perforce-helix-swarm-redis:
+    image: redis:latest
+    hostname: helix-swarm-redis
+    command: redis-server --protected-mode no --port 7379
+    ports:
+      - "7379:7379"
+    volumes:
+      - perforce-helix-swarm-redis-data:/root/redis
+      - perforce-helix-swarm-redis-conf:/usr/local/etc/redis/redis.conf
+
+volumes:
+  perforce-helix-swarm-data:
+    driver: local
+  perforce-helix-swarm-redis-data:
+    driver: local
+  perforce-helix-swarm-redis-conf:
+    driver: local

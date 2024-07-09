@@ -1,0 +1,32 @@
+version: '3.7'
+
+services:
+  teamcity-server:
+    image: jetbrains/teamcity-server:latest
+    hostname: teamcity
+    ports:
+      - "8111:8111"
+    volumes:
+      - teamcity-server-data:/data/teamcity_server/datadir
+      - teamcity-server-logs:/opt/teamcity/logs
+    depends_on:
+      - teamcity-database
+
+  teamcity-database:
+    image: postgres:latest
+    hostname: teamcity-postgres
+    ports:
+      - "5433:5432"
+    env_file: "../.env"
+    environment:
+      PG_DATA: "/var/lib/postgresql/data"
+    volumes:
+      - teamcity-database-storage:/var/lib/postgresql/data
+
+volumes:
+  teamcity-server-data:
+    driver: local
+  teamcity-server-logs:
+    driver: local
+  teamcity-database-storage:
+    driver: local

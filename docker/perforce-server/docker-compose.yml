@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  perforce-server:
+    image: sourcegraph/helix-p4d:latest
+    hostname: perforce
+    ports:
+      - "1666:1666"
+    volumes:
+      - perforce-server-data:/p4
+    env_file: "../.env"
+    environment:
+      P4TCP: 1666
+      P4PORT: 1666
+
+volumes:
+  perforce-server-data:
+    driver: local

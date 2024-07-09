@@ -1,0 +1,7 @@
+version: '3.7'
+
+services:
+  teamcity-agent:
+    image: teamcity-agent-unity
+    volumes:
+      - ./teamcity-agent-conf/buildAgent.properties:/opt/buildagent/conf/buildAgent.properties
