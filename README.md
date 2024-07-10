@@ -2,40 +2,60 @@
 
 ## Introduction
 
+This project demonstrates how to set up a very basic CI/CD pipeline for Unity game development by utilizing Docker Swarm to run the following services inside containers:
+
+- Perforce server (Helix Core P4D)
+- Perforce Helix Swarm
+- TeamCity server
+- TeamCity build agent
+
 ## CI/CD Infrastructure Setup
 
 ### Prerequisites
 
 #### Installing Docker
 
-There could be many reasons for this error. But most obvious reason for this error is using Windows Container in Linux Container Mode or vice versa.
-
-Right-click Docker icon in the System Tray to open its context menu
-Click "Switch to Windows/Linux Containers..."
-Click the Switch button in the dialog (it may take little time)
-Make sure Docker is in Running state now
+Go to https://www.docker.com/ to download Docker for your platform and follow the installation instructions.
 
 #### Initialize a Docker Swarm
 
-`docker swarm init`
+We are going to use Docker Swarm to be able to easily manage a cluster of Docker containers across multiple machines. This is useful if you want to deploy build agents to different platforms, for example, Windows and macOS.
 
-`docker swarm join`
+Choose your Swarm "manager" machine and run the following command to initialize the cluster:
+
+```shell
+docker swarm init
+```
+
+For any additional machine you want to add, run the following command:
+
+```shell
+docker swarm join HOST:PORT
+```
+
+More information on Swarm is available here: https://docs.docker.com/engine/swarm/
 
 #### Configuring Environment Variables
+
+You will find the credentials for the Perforce super user, the Helix Swarm reviewer user and the database credentials for TeamCity inside the environment file `docker/.env`. Feel free to change those to your liking.
 
 ### Perforce Server
 
 #### Step 1: Deploy Docker Container
 
 1. Open the directory `docker` in your shell.
-2. Run the command: `docker stack deploy -c perforce-server/docker-compose.yml devops`
+2. Run the command: 
+
+```shell
+docker stack deploy -c perforce-server/docker-compose.yml devops
+```
 
 #### Step 2: Verify - Connect to the Server as Administrator
 
 1. Start the program *P4Admin*.
 2. Create a new connection:
-   - *Server*: `localhost:1666` (if you run Perforce inside a local Docker container)
-   - *User*: `admin` (the `P4USER` you specified in your `.env` file)
+   - **Server**: `localhost:1666` (if you run Perforce inside a local Docker container)
+   - **User**: `admin` (the `P4USER` you specified in your `.env` file)
 3. Click *Ok* and enter the password (`P4PASSWD`) you specified in your `.env` file.
 4. Verify that the connection is successful, you should see the name `perforce-server` in the server info panel.
 
@@ -46,7 +66,11 @@ Make sure Docker is in Running state now
 #### Step 1: Deploy Docker Container
 
 1. Open the directory `docker` in your shell.
-2. Run the command: `docker stack deploy -c perforce-helix-swarm/docker-compose.yml devops`
+2. Run the command:
+
+```shell
+docker stack deploy -c perforce-helix-swarm/docker-compose.yml devops
+```
 
 #### Step 2: Match Swarm Hostname to IP (Optional)
 
@@ -58,6 +82,8 @@ Make sure Docker is in Running state now
 ```
 
 #### Step 3: Change the Extension Port Configuration (Optional)
+
+This step is only needed if you run Helix Swarm inside a cluster on your local machine and use a port other than 80, e.g., 8085. Currently, the Helix Swarm setup script cannot properly handle the propagation of custom ports and manual steps are necessary to inform the Perforce server about how to connect to Helix Swarm.
 
 1. Run the following command in a shell:
 
@@ -74,7 +100,11 @@ p4 -p localhost:1666 -u super extension --configure Perforce::helix-swarm
 #### Step 1: Deploy Docker Container
 
 1. Open the directory `docker` in your shell.
-2. Run the command: `docker stack deploy -c teamcity-server/docker-compose.yml devops`
+2. Run the command:
+
+```shell
+docker stack deploy -c teamcity-server/docker-compose.yml devops
+```
 
 #### Step 2: Configure the TeamCity Server
 
@@ -95,17 +125,17 @@ You should now see the TeamCity dashboard.
 
 #### Step 3: Install the Unity plugin
 
-1. Open the *Administration* page.
-2. Select *Plugins* from the side menu.
-3. Click *Browse plugins repository* and hit *Proceed*.
-4. Search for "Unity" and select the *Unity Support* plugin.
-5. Click on *Get* and install the plugin to your local server.
-6. Click on the *Install* button after being sent back to TeamCity.
-7. After the plugin is installed, click *Enable uploaded plugin* and hit *Enable*.
+1. Open the **Administration** page.
+2. Select **Plugins** from the side menu.
+3. Click **Browse plugins repository** and hit **Proceed**.
+4. Search for "Unity" and select the **Unity Support** plugin.
+5. Click on **Get** and install the plugin to your local server.
+6. Click on the **Install** button after being sent back to TeamCity.
+7. After the plugin is installed, click **Enable uploaded plugin** and hit **Enable**.
 
 #### Step 4: Change Maximum Build Artifact Size (Optional)
 
-As an additional recommended step, open the adminstration panel and set the maximum build artifact file size to 1 GB or higher.
+As an additional recommended step, open the administration panel and set the maximum build artifact file size to 1 GB or higher.
 
 ### TeamCity Build Agent
 
@@ -131,7 +161,7 @@ docker build -t teamcity-agent-unity \
 	--progress=plain .
 ```
 
-Run `docker images` to double-check if your new image named `teamcity-agent-unity` has been successfully built. An example output could look like this:
+Run the command `docker images` to double-check if your new image named `teamcity-agent-unity` has been successfully built. An example output could look like this:
 
 ```
 $ docker images
@@ -147,7 +177,11 @@ sourcegraph/helix-p4d       <none>    0bc3c79c2980   10 months ago   215MB
 #### Step 2: Deploy the Docker Container
 
 1. Open the directory `docker` in your shell.
-2. Run the command: `docker stack deploy -c teamcity-agent/docker-compose.yml devops`
+2. Run the command:
+
+```shell
+docker stack deploy -c teamcity-agent/docker-compose.yml devops
+```
 
 #### Step 3: Authorize the Agent
 
@@ -163,22 +197,22 @@ The following steps only need to be done once per agent:
 
 #### Step 1: Create a New User
 
-1. Open the tab *Users & Groups* in *P4Admin*.
-2. Right-click on the users list and select *New User...*
-3. Make sure to provide at least the following parameters: *User*, *Email*, *Full name*, *Password*.
-4. Click *Ok* to create the new user.
+1. Open the tab **Users & Groups** in *P4Admin*.
+2. Right-click on the users list and select **New User...**
+3. Make sure to provide at least the following parameters: **User**, **Email**, **Full name**, **Password**.
+4. Click **Ok** to create the new user.
 
 #### Step 2: Submit Files to Depot
 
 1. Start the program *P4V*.
 2. Create a new connection:
-   - *Server*: `localhost:1666` (if you run Perforce inside a local Docker container)
-   - *User*: The user you created in the previous step.
+   - **Server**: `localhost:1666` (if you run Perforce inside a local Docker container)
+   - **User**: The user you created in the previous step.
 3. Create a new workspace. Enter the user's password if requested.
 4. Create a new Unity project or copy an existing one into the new workspace.
 5. Copy the `p4ignore.txt` from the examples into the Unity project folder.
-6. Open the *Workspace* view of *P4V*, right-click the root folder and select *Reconcile Offline Work...*
-7. Wait until the popup shows up and then select *Reconcile*.
+6. Open the **Workspace** view of **P4V**, right-click the root folder and select **Reconcile Offline Work...**
+7. Wait until the popup shows up and then select **Reconcile**.
 
 ### Setting up a Project on TeamCity
 
@@ -193,12 +227,12 @@ Additionally, we want to add a set of unit tests and a build script to the Unity
 
 #### Step 2: Create the TeamCity Project and Build Configuration
 
-1. Click on the *+* button next to *Projects*.
+1. Click on the **+** button next to **Projects**.
 2. Specify the repository URL: `perforce://perforce:1666/depot`
-3. Enter your Perforce username and password and click *Proceed*.
+3. Enter your Perforce username and password and click **Proceed**.
 4. If your depot contains TeamCity configuration files, you will be asked if you want to import those. Select the option `Import settings from .teamcity/settings.kts and enable synchronization with the VCS repository` (recommended) or `Import settings from .teamcity/settings.kts`.
-4. Set the project name and build configuration name and click *Proceed*.
-5. If it auto-detects your build steps, select *Unity* from the list and click *Use selected*.
+4. Set the project name and build configuration name and click **Proceed**.
+5. If it auto-detects your build steps, select **Unity** from the list and click **Use selected**.
 
 ### Setting up a Project on Helix Swarm
 
@@ -214,22 +248,22 @@ Additionally, we want to add a set of unit tests and a build script to the Unity
 #### Prepare Tokens and IDs from TeamCity
 
 1. Open your profile settings in TeamCity.
-2. Open *Access Tokens* from the side menu.
-3. Click on *Create access token*.
-4. Set the *Token name* (e.g., `Helix_Swarm`) and click *Create*.
-5. Copy the *Token value*, you will need it later.
+2. Open **Access Tokens** from the side menu.
+3. Click on **Create access token**.
+4. Set the **Token name** (e.g., `Helix_Swarm`) and click **Create**.
+5. Copy the **Token value**, you will need it later.
 
 #### Create a Test
 
 1. Open Helix Swarm and select *Tests* from the side menu.
-2. Click on *Add Test Definition*.
+2. Click on **Add Test Definition**.
 3. Choose a name for the test.
 4. Use the following URL for the test: `http://teamcity:8111/app/perforce/runBuildForShelve`
    - Note that if your TeamCity server is on a different host, you need to change the URL accordingly.
-5. Set the field *Timeout(seconds)* to 10 or any other appropriate value.
-6. Copy the following string into *Body*: `buildTypeId=BUILDTYPE&vcsRootId=VCSROOTID&shelvedChangelist={change}&swarmUpdateUrl={update}`
-   - Replace `BUILDTYPE` with the *Build Configuration ID* from TeamCity that is found inside the URL when selecting a build from a project. For example, `http://teamcity:8111/buildConfiguration/Tgdf2024_RunTests` refers to `Tgdf2024_RunTests`.
-   - Replace `VCSROOTID` with the *VCS root ID* from TeamCity that is revealed when opening the editor page of the VCS root.
+5. Set the field **Timeout(seconds)** to 10 or any other appropriate value.
+6. Copy the following string into **Body**: `buildTypeId=BUILDTYPE&vcsRootId=VCSROOTID&shelvedChangelist={change}&swarmUpdateUrl={update}`
+   - Replace `BUILDTYPE` with the **Build Configuration ID** from TeamCity that is found inside the URL when selecting a build from a project. For example, `http://teamcity:8111/buildConfiguration/Tgdf2024_RunTests` refers to `Tgdf2024_RunTests`.
+   - Replace `VCSROOTID` with the **VCS root ID** from TeamCity that is revealed when opening the editor page of the VCS root.
 7. Add a header:
    - Set the name to `Authorization`.
    - Set the value to `Bearer TOKEN` and replace `TOKEN` with the TeamCity token you created for your user account.
@@ -238,30 +272,30 @@ More information: https://www.jetbrains.com/help/teamcity/integrating-with-helix
 
 #### Create and Assign a Workflow
 
-1. Open Helix Swarm and select *Workflows* from the side menu.
-2. Click on *Add Workflow*.
+1. Open Helix Swarm and select **Workflows** from the side menu.
+2. Click on **Add Workflow**.
 3. Choose a name for the workflow.
-4. Click *Add Test* and select the previously created test as definition. Then hit the green checkmark.
-5. Finally, click *Save*.
-6. Open the *Projects* page from the side menu and select your project.
-7. Open the *Settings* page from the side menu.
-8. Open the *General Settings* tab and assign the new workflow at the *Workflow* field of this project.
+4. Click **Add Test** and select the previously created test as definition. Then hit the green checkmark.
+5. Finally, click **Save**.
+6. Open the **Projects** page from the side menu and select your project.
+7. Open the **Settings** page from the side menu.
+8. Open the **General Settings** tab and assign the new workflow at the **Workflow** field of this project.
 
 #### Setting up the Commit Status Publisher on TeamCity
 
 Helix Swarm is now able to trigger test runs on TeamCity. Now we need a way for TeamCity to report back the test results to Helix Swarm.
 
-1. Open the test runner build and select *Edit configuration...*
-2. Open the page *Build Features* from the side menu.
-3. Click *Add build feature* and choose `Commit status publisher`.
-4. Pick the *VCS Root* and set *Publisher* to `Perforce Helix Swarm`.
+1. Open the test runner build and select **Edit configuration...**
+2. Open the page **Build Features** from the side menu.
+3. Click **Add build feature** and choose `Commit status publisher`.
+4. Pick the **VCS Root** and set **Publisher** to `Perforce Helix Swarm`.
 5. Enter your Helix Swarm URL, e.g., `http://helix-swarm:8085/`
 6. Enter the username of the Perforce user on whose behalf TeamCity will report, for example, `reviewer`.
 7. Create a login ticket for this user by running the following command in your local shell: 
    - `p4 -p localhost:1666 -u reviewer login -a -p`
-   - Copy the generated token and paste it to the *Ticket* field.
-8. Enable *Code Review Comments*.
-9. Click *Test connection* first and *Save* if everything works fine.
+   - Copy the generated token and paste it to the **Ticket** field.
+8. Enable **Code Review Comments**.
+9. Click **Test connection** first and **Save** if everything works fine.
 
 ## CI/CD Example Usage
 
